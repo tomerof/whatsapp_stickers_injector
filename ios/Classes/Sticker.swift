@@ -88,8 +88,8 @@ class Sticker {
      - .animatedImagesNotSupported if the image is animated
      - .tooManyEmojis if there are too many emojis assigned to the sticker
      */
-    init(contentsOfFile filename: String, emojis: [String]?) throws {
-        self.imageData = try ImageData.imageDataIfCompliant(contentsOfFile: filename, isTray: false)
+    init(contentsOfFile filename: String, emojis: [String]?, isAnimatedPack: Bool = false) throws {
+        self.imageData = try ImageData.imageDataIfCompliant(contentsOfFile: filename, isTray: false, isAnimatedPack: isAnimatedPack)
         self.emojis = try StickerEmojis.canonicalizedEmojis(rawEmojis: emojis)
     }
 
@@ -106,8 +106,8 @@ class Sticker {
      - .animatedImagesNotSupported if the image is animated
      - .tooManyEmojis if there are too many emojis assigned to the sticker
      */
-    init(imageData: Data, type: ImageDataExtension, emojis: [String]?) throws {
-        self.imageData = try ImageData.imageDataIfCompliant(rawData:imageData, extensionType: type, isTray: false)
+    init(imageData: Data, type: ImageDataExtension, emojis: [String]?, isAnimatedPack: Bool = false) throws {
+        self.imageData = try ImageData.imageDataIfCompliant(rawData:imageData, extensionType: type, isTray: false, isAnimatedPack: isAnimatedPack)
         self.emojis = try StickerEmojis.canonicalizedEmojis(rawEmojis: emojis)
     }
 

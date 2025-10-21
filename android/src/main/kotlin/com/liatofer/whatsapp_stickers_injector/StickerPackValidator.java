@@ -26,6 +26,7 @@ import java.util.List;
 
 class StickerPackValidator {
     private static final int STICKER_FILE_SIZE_LIMIT_KB = 100;
+    private static final int ANIMATED_STICKER_FILE_SIZE_LIMIT_KB = 500;
     static final int EMOJI_MAX_LIMIT = 3;
     private static final int EMOJI_MIN_LIMIT = 1;
     private static final int IMAGE_HEIGHT = 512;
@@ -177,9 +178,15 @@ class StickerPackValidator {
             @NonNull final String fileName) throws InvalidPackException {
         try {
             final byte[] bytes = StickerPackLoader.fetchStickerAsset(identifier, fileName, context);
-            if (bytes.length > STICKER_FILE_SIZE_LIMIT_KB * ONE_KIBIBYTE) {
+            // Determine if this is an animated pack by checking the pack
+            StickerPack pack = findStickerPackByIdentifier(context, identifier);
+            boolean isAnimatedPack = pack != null && pack.animated;
+            int sizeLimitKB = isAnimatedPack ? ANIMATED_STICKER_FILE_SIZE_LIMIT_KB : STICKER_FILE_SIZE_LIMIT_KB;
+            
+            if (bytes.length > sizeLimitKB * ONE_KIBIBYTE) {
+                String packType = isAnimatedPack ? "animated" : "static";
                 throw new InvalidPackException(InvalidPackException.IMAGE_TOO_BIG,
-                        "sticker should be less than " + STICKER_FILE_SIZE_LIMIT_KB + "KB, sticker pack identifier:"
+                        packType + " sticker should be less than " + sizeLimitKB + "KB, sticker pack identifier:"
                                 + identifier + ", filename:" + fileName);
             }
             /*
@@ -249,5 +256,22 @@ class StickerPackValidator {
             throw new InvalidPackException(InvalidPackException.INVALID_URL, "url: " + urlString + " is malformed");
         }
         return false;
+    }
+
+    /**
+     * Helper method to find a sticker pack by identifier
+     */
+    private static StickerPack findStickerPackByIdentifier(@NonNull Context context, @NonNull String identifier) {
+        try {
+            List<StickerPack> packs = ConfigFileManager.getStickerPacks(context);
+            for (StickerPack pack : packs) {
+                if (pack.identifier.equals(identifier)) {
+                    return pack;
+                }
+            }
+        } catch (Exception e) {
+            Log.e("StickerPackValidator", "Error finding sticker pack: " + e.getMessage());
+        }
+        return null;
     }
 }

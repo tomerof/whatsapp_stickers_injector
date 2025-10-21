@@ -35,6 +35,7 @@ class StickerPack {
     let publisherWebsite: String?
     let privacyPolicyWebsite: String?
     let licenseAgreementWebsite: String?
+    let animated: Bool
 
     var stickers: [Sticker]
 
@@ -66,7 +67,7 @@ class StickerPack {
      - .incorrectImageSize if the tray image is not within the allowed size
      - .animatedImagesNotSupported if the tray image is animated
      */
-    init(identifier: String, name: String, publisher: String, trayImageFileName: String, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?) throws {
+    init(identifier: String, name: String, publisher: String, trayImageFileName: String, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?, animated: Bool = false) throws {
         guard !name.isEmpty && !publisher.isEmpty && !identifier.isEmpty else {
             throw StickerPackError.emptyString
         }
@@ -78,8 +79,9 @@ class StickerPack {
         self.identifier = identifier
         self.name = name
         self.publisher = publisher
+        self.animated = animated
 
-        let trayCompliantImageData: ImageData = try ImageData.imageDataIfCompliant(contentsOfFile: trayImageFileName, isTray: true)
+        let trayCompliantImageData: ImageData = try ImageData.imageDataIfCompliant(contentsOfFile: trayImageFileName, isTray: true, isAnimatedPack: animated)
         self.trayImage = trayCompliantImageData
 
         stickers = []
@@ -107,7 +109,7 @@ class StickerPack {
      - .incorrectImageSize if the tray image is not within the allowed size
      - .animatedImagesNotSupported if the tray image is animated
      */
-    init(identifier: String, name: String, publisher: String, trayImagePNGData: Data, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?) throws {
+    init(identifier: String, name: String, publisher: String, trayImagePNGData: Data, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?, animated: Bool = false) throws {
         guard !name.isEmpty && !publisher.isEmpty && !identifier.isEmpty else {
             throw StickerPackError.emptyString
         }
@@ -119,8 +121,9 @@ class StickerPack {
         self.identifier = identifier
         self.name = name
         self.publisher = publisher
+        self.animated = animated
 
-        let trayCompliantImageData: ImageData = try ImageData.imageDataIfCompliant(rawData: trayImagePNGData, extensionType: .png, isTray: true)
+        let trayCompliantImageData: ImageData = try ImageData.imageDataIfCompliant(rawData: trayImagePNGData, extensionType: .png, isTray: true, isAnimatedPack: animated)
         self.trayImage = trayCompliantImageData
 
         stickers = []
@@ -145,7 +148,7 @@ class StickerPack {
             throw StickerPackError.stickersNumOutsideAllowableRange
         }
 
-        let sticker: Sticker = try Sticker(contentsOfFile: filename, emojis: emojis)
+        let sticker: Sticker = try Sticker(contentsOfFile: filename, emojis: emojis, isAnimatedPack: animated)
 
         stickers.append(sticker)
     }
@@ -166,7 +169,7 @@ class StickerPack {
             throw StickerPackError.stickersNumOutsideAllowableRange
         }
 
-        let sticker: Sticker = try Sticker(imageData: imageData, type: type, emojis: emojis)
+        let sticker: Sticker = try Sticker(imageData: imageData, type: type, emojis: emojis, isAnimatedPack: animated)
 
         stickers.append(sticker)
     }
@@ -185,6 +188,7 @@ class StickerPack {
             json["name"] = self.name
             json["publisher"] = self.publisher
             json["tray_image"] = self.trayImage.image!.pngData()?.base64EncodedString()
+            json["animated_sticker_pack"] = self.animated
 
             var stickersArray: [[String: Any]] = []
             for sticker in self.stickers {

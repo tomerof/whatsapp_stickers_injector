@@ -104,7 +104,7 @@ class ImageData {
         self.type = type
     }
 
-    static func imageDataIfCompliant(contentsOfFile filename: String, isTray: Bool) throws -> ImageData {
+    static func imageDataIfCompliant(contentsOfFile filename: String, isTray: Bool, isAnimatedPack: Bool = false) throws -> ImageData {
         let fileExtension: String = (filename as NSString).pathExtension
         
         guard let data = FileManager.default.contents(atPath: filename) else {
@@ -115,14 +115,17 @@ class ImageData {
             throw StickerPackError.unsupportedImageFormat(fileExtension)
         }
 
-        return try ImageData.imageDataIfCompliant(rawData: data, extensionType: imageType, isTray: isTray)
+        return try ImageData.imageDataIfCompliant(rawData: data, extensionType: imageType, isTray: isTray, isAnimatedPack: isAnimatedPack)
     }
 
-    static func imageDataIfCompliant(rawData: Data, extensionType: ImageDataExtension, isTray: Bool) throws -> ImageData {
+    static func imageDataIfCompliant(rawData: Data, extensionType: ImageDataExtension, isTray: Bool, isAnimatedPack: Bool = false) throws -> ImageData {
         let imageData = ImageData(data: rawData, type: extensionType)
 
-        guard !imageData.animated else {
-            throw StickerPackError.animatedImagesNotSupported
+        // For animated packs, allow animated images; for static packs, reject them
+        if !isAnimatedPack {
+            guard !imageData.animated else {
+                throw StickerPackError.animatedImagesNotSupported
+            }
         }
 
         if isTray {
@@ -134,7 +137,9 @@ class ImageData {
                 throw StickerPackError.incorrectImageSize(imageData.image!.size)
             }
         } else {
-            guard imageData.bytesSize <= Limits.MaxStickerFileSize else {
+            // Use appropriate size limit based on pack type
+            let maxSize = isAnimatedPack ? Limits.MaxAnimatedStickerFileSize : Limits.MaxStickerFileSize
+            guard imageData.bytesSize <= maxSize else {
                 throw StickerPackError.imageTooBig(imageData.bytesSize)
             }
 

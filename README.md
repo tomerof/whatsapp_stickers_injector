@@ -1,14 +1,22 @@
 # whatsapp_stickers_injector
 
-A Flutter plugin for adding stickers to WhatsApp.
+A Flutter plugin for adding stickers to WhatsApp, including support for animated stickers.
 
 forked from [applicazza/whatsapp_stickers_plus](https://pub.dev/packages/whatsapp_stickers_plus)
 
-just updated the android build files.
+## ✨ Features
+
+- ✅ Static stickers (PNG/WebP)
+- ✅ **Animated stickers (WebP animated)** 🆕
+- ✅ Support for both Android and iOS
+- ✅ Local assets and remote downloads
+- ✅ Full WhatsApp API compliance
 
 ## Notes
 
 * ```trayImageFileName``` uses PNG data whereas stickers use WebP data.
+* **Animated stickers**: Use WebP animated format with `isAnimatedPack: true`
+* **Size limits**: Static stickers ≤ 100KB, Animated stickers ≤ 500KB
 
 ## Usage
 
@@ -92,6 +100,52 @@ Future installFromAssets() async {
 }
 
 ```
+
+### Animated Stickers 🆕
+
+Create animated sticker packs using WebP animated format:
+
+```dart
+const animatedStickers = {
+  '01_SendingLove.webp': ['💕', '😘', '❤️'],
+  '02_WellDoThisTogether.webp': ['✊', '💪', '🙏'],
+  '03_Heart.webp': ['❤️', '😘', '💕'],
+  // ... more animated stickers
+};
+
+Future installAnimatedStickers() async {
+  var animatedStickerPack = WhatsappStickers(
+    identifier: 'animatedFlutterWhatsAppStickers',
+    name: 'Animated Flutter WhatsApp Stickers',
+    publisher: 'Flutter Developer',
+    trayImageFileName: WhatsappStickerImage.fromAsset('assets/tray_Cuppy.png'),
+    publisherWebsite: 'https://flutter.dev',
+    privacyPolicyWebsite: '',
+    licenseAgreementWebsite: '',
+    isAnimatedPack: true, // 🎯 Flag importante para stickers animados
+  );
+
+  // Adicionar stickers animados (WebP animados)
+  animatedStickers.forEach((sticker, emojis) {
+    animatedStickerPack.addSticker(WhatsappStickerImage.fromAsset('assets/$sticker'), emojis);
+  });
+
+  try {
+    await animatedStickerPack.sendToWhatsApp();
+    print('Pacote de stickers animados enviado com sucesso!');
+  } on WhatsappStickersException catch (e) {
+    print('Erro ao enviar stickers animados: ${e.cause}');
+  }
+}
+```
+
+**Requirements for Animated Stickers:**
+- ✅ Format: WebP animated (not PNG)
+- ✅ Size: ≤ 500KB per sticker (vs 100KB for static)
+- ✅ Dimensions: 512x512 pixels
+- ✅ Duration: ≤ 10 seconds, frames ≥ 8ms
+- ✅ First frame: Must be complete (WhatsApp stops on first frame after loop)
+- ✅ Mixed packs: Not allowed (all static OR all animated)
 
 ### Remote assets
 

@@ -50,6 +50,7 @@ public class SwiftWhatsappStickersPlugin: NSObject, FlutterPlugin {
         let publisherWebsite = arguments["publisherWebsite"] as? String
         let privacyPolicyWebsite = arguments["privacyPolicyWebsite"] as? String
         let licenseAgreementWebsite = arguments["licenseAgreementWebsite"] as? String
+        let isAnimatedPack = arguments["isAnimatedPack"] as? Bool ?? false
         
         var stickerPack: StickerPack?
         
@@ -60,7 +61,8 @@ public class SwiftWhatsappStickersPlugin: NSObject, FlutterPlugin {
                                           trayImageFileName: locateFile(atPath: trayImageFileName),
                                           publisherWebsite: publisherWebsite,
                                           privacyPolicyWebsite: privacyPolicyWebsite,
-                                          licenseAgreementWebsite: licenseAgreementWebsite)
+                                          licenseAgreementWebsite: licenseAgreementWebsite,
+                                          animated: isAnimatedPack)
             
         } catch StickerPackError.fileNotFound {
             result(FlutterError(code: "FILE_NOT_FOUND", message: "\(trayImageFileName) not found.", details: nil))

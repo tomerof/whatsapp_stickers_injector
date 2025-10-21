@@ -57,8 +57,12 @@ public class ConfigFileManager {
         String privacyPolicyWebsite = call.argument("privacyPolicyWebsite");
         String licenseAgreementWebsite = call.argument("licenseAgreementWebsite");
         Map<String, List<String>> stickers = call.argument("stickers");
+        Boolean isAnimatedPack = call.argument("isAnimatedPack");
+        if (isAnimatedPack == null) {
+            isAnimatedPack = false;
+        }
         StickerPack newStickerPack = new StickerPack(identifier, name, publisher, trayImageFileName, "",
-                publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, "1", false);
+                publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, "1", isAnimatedPack);
         List<Sticker> newStickers = new ArrayList<Sticker>();
         assert stickers != null;
         for (Map.Entry<String, List<String>> entry : stickers.entrySet()) {
@@ -117,6 +121,7 @@ public class ConfigFileManager {
             obj.put("publisher_website", s.publisherWebsite);
             obj.put("privacy_policy_website", s.privacyPolicyWebsite);
             obj.put("license_agreement_website", s.licenseAgreementWebsite);
+            obj.put("animated_sticker_pack", s.animated);
 
             JSONArray stickerList = new JSONArray();
             for (Sticker _sticker : s.getStickers()) {
