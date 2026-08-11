@@ -1,3 +1,11 @@
+## 1.1.4
+
+* Added Swift Package Manager support for iOS (CocoaPods is still supported).
+* **Breaking:** now requires Flutter 3.44.0 or newer, because the iOS Swift package declares the
+  `FlutterFramework` dependency introduced in that release. Stay on 1.1.3 for older Flutter versions.
+* Merged the Objective-C plugin wrapper into `WhatsappStickersPlugin.swift`; the iOS plugin is now pure Swift.
+* Removed the `VALID_ARCHS[sdk=iphonesimulator*] = x86_64` restriction so the plugin builds for arm64 simulators on Apple Silicon.
+
 ## 1.1.3
 
 * Update Android build files

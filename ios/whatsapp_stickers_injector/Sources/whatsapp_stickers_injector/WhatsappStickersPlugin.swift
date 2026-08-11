@@ -1,12 +1,12 @@
 import Flutter
 import UIKit
 
-public class SwiftWhatsappStickersPlugin: NSObject, FlutterPlugin {
+public class WhatsappStickersPlugin: NSObject, FlutterPlugin {
     private var registrar: FlutterPluginRegistrar?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "whatsapp_stickers_injector", binaryMessenger: registrar.messenger())
-        let instance = SwiftWhatsappStickersPlugin()
+        let instance = WhatsappStickersPlugin()
         instance.registrar = registrar
         registrar.addMethodCallDelegate(instance, channel: channel)
     }

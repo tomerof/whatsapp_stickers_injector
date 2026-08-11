@@ -28,6 +28,8 @@ android {
 
 ### iOS
 
+Requires iOS 13.0 or newer. Both Swift Package Manager and CocoaPods are supported.
+
 Do not forget to add following entry to ```Info.plist``` with ```Runner``` target.
 
 ```xml
