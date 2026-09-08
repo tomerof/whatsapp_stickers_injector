@@ -171,8 +171,8 @@ public class WhatsappStickersPlugin: FlutterPlugin, MethodCallHandler, ActivityA
           this.result?.error("cancelled", "cancelled", "")
         }
       } else if (resultCode == Activity.RESULT_OK) {
-        if (data != null && data.extras != null) { // Safe null check
-          val bundle = data.extras
+        val bundle = data?.extras
+        if (bundle != null) { // Safe null check
           if (bundle.containsKey("add_successful")) { // Safe access
             this.result?.success("add_successful")
           } else if (bundle.containsKey("already_added")) {

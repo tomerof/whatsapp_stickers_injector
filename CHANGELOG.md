@@ -5,6 +5,12 @@
   `FlutterFramework` dependency introduced in that release. Stay on 1.1.3 for older Flutter versions.
 * Merged the Objective-C plugin wrapper into `WhatsappStickersPlugin.swift`; the iOS plugin is now pure Swift.
 * Removed the `VALID_ARCHS[sdk=iphonesimulator*] = x86_64` restriction so the plugin builds for arm64 simulators on Apple Silicon.
+* Replaced the removed `jcenter()` repository with `mavenCentral()` in the Android `build.gradle`.
+* Made the Android `kotlin-android` plugin application conditional on the Android Gradle Plugin
+  version, so the plugin now also builds on Android Gradle Plugin 9+ (built-in Kotlin), while
+  remaining compatible with older AGP versions.
+* Fixed a Kotlin null-safety compile error in `WhatsappStickersPlugin.kt` (`onActivityResult`) that
+  was exposed by newer Kotlin compiler versions.
 
 ## 1.1.3
 
