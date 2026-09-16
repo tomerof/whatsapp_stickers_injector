@@ -1,3 +1,17 @@
+## 1.1.6
+
+* Documented the whole public API. All 53 public API elements now carry dartdoc comments (pub.dev
+  previously reported 0%), including per-exception notes on what each error code actually means --
+  notably that `WhatsappStickersCancelledException` and `WhatsappStickersAlreadyAddedException` are
+  ordinary user outcomes rather than bugs, and that `WhatsappStickersTooManyEmojisException` is also
+  raised on Android when a sticker has *no* emoji.
+* Added an `analysis_options.yaml` based on `flutter_lints`, with the `public_member_api_docs` lint
+  enabled so the documentation cannot silently regress.
+* Converted the exception constructors to super parameters to satisfy `use_super_parameters`. No
+  signature changes: they still take a single positional `String?`.
+
+No functional changes; this release is documentation and lints only.
+
 ## 1.1.5
 
 * Fixed the Android build failing with `Could not find method kotlin()` on Android Gradle Plugin 9+
