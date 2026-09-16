@@ -1,3 +1,20 @@
+## 1.1.5
+
+* Fixed the Android build failing with `Could not find method kotlin()` on Android Gradle Plugin 9+
+  (the failure 1.1.4 was meant to fix). The `kotlin-android` plugin is no longer applied by this
+  plugin at all, not even conditionally: the Flutter tool decides whether to provide Kotlin for a
+  plugin project by *statically scanning* its `build.gradle` for an `apply plugin: 'kotlin-android'`
+  line, so 1.1.4's AGP-version conditional still matched the scan. Flutter therefore skipped the
+  project, while the conditional itself evaluated to false on AGP 9 -- leaving no Kotlin plugin
+  applied and nothing to provide the `kotlin { }` extension. Kotlin now comes from the Flutter tool
+  on both paths: AGP's built-in Kotlin on AGP 9+, and an auto-applied KGP on older AGP.
+* Removed the explicit `kotlin-stdlib-jdk7` dependency, which pinned the Kotlin standard library to
+  2.1.0 in apps whose Kotlin toolchain is newer. The Kotlin plugin contributes a matching stdlib
+  itself, and `kotlin-stdlib-jdk7` has been folded into `kotlin-stdlib` since Kotlin 1.8.
+* The example app no longer applies the Kotlin Gradle Plugin either, so it now builds under both
+  `android.builtInKotlin=true` and `false`. Verified on AGP 9.0.1 / KGP 2.3.20 in both modes and
+  on AGP 8.11.1 / KGP 2.2.20.
+
 ## 1.1.4
 
 * Added Swift Package Manager support for iOS (CocoaPods is still supported).

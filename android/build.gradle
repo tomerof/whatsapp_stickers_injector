@@ -10,6 +10,9 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:8.6.0'
+        // KGP stays on the buildscript classpath even though this script never
+        // applies it: on AGP < 9 the Flutter tool applies KGP to this project
+        // and resolves it from here.
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -23,13 +26,15 @@ rootProject.allprojects {
 
 apply plugin: 'com.android.library'
 
-// AGP 9+ ships built-in Kotlin support and no longer allows applying the
-// Kotlin Gradle Plugin; only apply it on older AGP versions. See
+// This script must not apply the Kotlin Gradle Plugin (KGP), not even
+// conditionally: the Flutter tool decides whether to provide Kotlin for this
+// project by statically scanning this file for an `apply plugin:
+// 'kotlin-android'` line, so a runtime conditional still matches the scan and
+// makes the tool skip us -- leaving the project with no Kotlin plugin at all
+// on AGP 9+, where the conditional itself is false. Flutter provides Kotlin
+// either way: AGP's built-in Kotlin on AGP 9+, and an auto-applied KGP on
+// older AGP (requires Flutter >= 3.44). See
 // https://docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-plugin-authors
-def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0] as int
-if (agpMajor < 9) {
-    apply plugin: 'kotlin-android'
-}
 
 android {
     namespace = "com.liatofer.whatsapp_stickers_injector"
@@ -51,14 +56,10 @@ android {
     }
 }
 
-// The kotlin {} extension exists on both paths: registered by KGP on
-// AGP < 9 and by AGP's built-in Kotlin on 9+.
+// The kotlin {} extension exists on both paths: registered by the KGP the
+// Flutter tool applies on AGP < 9, and by AGP's built-in Kotlin on 9+.
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
-}
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
