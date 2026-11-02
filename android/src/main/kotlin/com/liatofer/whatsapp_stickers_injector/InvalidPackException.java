@@ -8,6 +8,8 @@ public class InvalidPackException extends Exception {
     public static String IMAGE_TOO_BIG = "IMAGE_TOO_BIG";
     public static String INCORRECT_IMAGE_SIZE = "INCORRECT_IMAGE_SIZE";
     public static String ANIMATED_IMAGES_NOT_SUPPORTED = "ANIMATED_IMAGES_NOT_SUPPORTED";
+    public static String STATIC_STICKER_IN_ANIMATED_PACK = "STATIC_STICKER_IN_ANIMATED_PACK";
+    public static String INVALID_ANIMATION = "INVALID_ANIMATION";
     public static String TOO_MANY_EMOJIS = "TOO_MANY_EMOJIS";
     public static String EMPTY_STRING = "EMPTY_STRING";
     public static String STRING_TOO_LONG = "STRING_TOO_LONG";

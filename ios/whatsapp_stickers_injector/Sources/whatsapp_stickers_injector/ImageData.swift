@@ -121,7 +121,9 @@ class ImageData {
     static func imageDataIfCompliant(rawData: Data, extensionType: ImageDataExtension, isTray: Bool) throws -> ImageData {
         let imageData = ImageData(data: rawData, type: extensionType)
 
-        guard !imageData.animated else {
+        // The tray icon is always static; stickers may be animated (a pack is all-animated or all-static,
+        // which StickerPack.verifyAnimation() enforces once every sticker is known).
+        if isTray && imageData.animated {
             throw StickerPackError.animatedImagesNotSupported
         }
 
@@ -134,8 +136,13 @@ class ImageData {
                 throw StickerPackError.incorrectImageSize(imageData.image!.size)
             }
         } else {
-            guard imageData.bytesSize <= Limits.MaxStickerFileSize else {
+            let maxSize: Int = imageData.animated ? Limits.MaxAnimatedStickerFileSize : Limits.MaxStickerFileSize
+            guard imageData.bytesSize <= maxSize else {
                 throw StickerPackError.imageTooBig(imageData.bytesSize)
+            }
+
+            if imageData.animated, let duration = imageData.image?.duration, duration > Limits.MaxAnimatedStickerDurationSeconds {
+                throw StickerPackError.invalidAnimation
             }
 
             guard imageData.image!.size == Limits.ImageDimensions else {

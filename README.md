@@ -39,6 +39,22 @@ Do not forget to add following entry to ```Info.plist``` with ```Runner``` targe
  </array>
 ```
 
+## Animated sticker packs
+
+A pack is either entirely animated or entirely static. Animated stickers are animated WebP files,
+512x512, at most 500 KB, every frame at least 8 ms and at most 10 seconds in total; the tray image
+stays a static PNG. By default the plugin detects an animated pack from its stickers. To be explicit:
+
+```dart
+final pack = WhatsappStickers(
+  identifier: 'my_animated_pack',
+  name: 'Animated',
+  publisher: 'Me',
+  trayImageFileName: WhatsappStickerImage.fromFile(trayPath),
+  animatedStickerPack: true, // or leave null to auto-detect
+);
+```
+
 ## Examples
 
 ### Local assets

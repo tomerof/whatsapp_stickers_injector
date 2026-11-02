@@ -26,6 +26,11 @@ import java.util.List;
 
 class StickerPackValidator {
     private static final int STICKER_FILE_SIZE_LIMIT_KB = 100;
+    // WhatsApp's animated sticker rules: at most 500 KB (a real KiB, unlike ONE_KIBIBYTE below),
+    // every frame at least 8 ms, the whole loop at most 10 s, and exactly 512x512.
+    private static final long ANIMATED_STICKER_FILE_SIZE_LIMIT_BYTES = 500 * 1024;
+    private static final int ANIMATED_FRAME_DURATION_MIN_MS = 8;
+    private static final long ANIMATED_TOTAL_DURATION_MAX_MS = 10_000;
     static final int EMOJI_MAX_LIMIT = 3;
     private static final int EMOJI_MIN_LIMIT = 1;
     private static final int IMAGE_HEIGHT = 512;
@@ -150,12 +155,12 @@ class StickerPackValidator {
                             + stickers.size() + ", sticker pack identifier:" + stickerPack.identifier);
         }
         for (final Sticker sticker : stickers) {
-            validateSticker(context, stickerPack.identifier, sticker);
+            validateSticker(context, stickerPack.identifier, sticker, stickerPack.animatedStickerPack);
         }
     }
 
     private static void validateSticker(@NonNull Context context, @NonNull final String identifier,
-            @NonNull final Sticker sticker) throws InvalidPackException {
+            @NonNull final Sticker sticker, final boolean animatedPack) throws InvalidPackException {
         if (sticker.emojis.size() > EMOJI_MAX_LIMIT) {
             throw new InvalidPackException(InvalidPackException.TOO_MANY_EMOJIS,
                     "emoji count exceed limit, sticker pack identifier:" + identifier + ", filename:"
@@ -170,14 +175,22 @@ class StickerPackValidator {
             throw new InvalidPackException(InvalidPackException.EMPTY_STRING,
                     "no file path for sticker, sticker pack identifier:" + identifier);
         }
-        validateStickerFile(context, identifier, sticker.imageFileName);
+        validateStickerFile(context, identifier, sticker.imageFileName, animatedPack);
     }
 
     private static void validateStickerFile(@NonNull Context context, @NonNull String identifier,
-            @NonNull final String fileName) throws InvalidPackException {
+            @NonNull final String fileName, final boolean animatedPack) throws InvalidPackException {
         try {
             final byte[] bytes = StickerPackLoader.fetchStickerAsset(identifier, fileName, context);
-            if (bytes.length > STICKER_FILE_SIZE_LIMIT_KB * ONE_KIBIBYTE) {
+            final WebPInfo info = WebPInfo.parse(bytes);
+            if (animatedPack) {
+                validateAnimatedSticker(identifier, fileName, bytes.length, info);
+            } else if (info.animated) {
+                throw new InvalidPackException(InvalidPackException.ANIMATED_IMAGES_NOT_SUPPORTED,
+                        "sticker is animated but the pack is not marked as animated (all stickers in a pack must be"
+                                + " either static or animated), sticker pack identifier:" + identifier
+                                + ", filename:" + fileName);
+            } else if (bytes.length > STICKER_FILE_SIZE_LIMIT_KB * ONE_KIBIBYTE) {
                 throw new InvalidPackException(InvalidPackException.IMAGE_TOO_BIG,
                         "sticker should be less than " + STICKER_FILE_SIZE_LIMIT_KB + "KB, sticker pack identifier:"
                                 + identifier + ", filename:" + fileName);
@@ -214,6 +227,57 @@ class StickerPackValidator {
                     "cannot open sticker file: sticker pack identifier:" + identifier + ", filename:" + stickerFileName
                             + "\n\n" + e.getMessage());
         }
+    }
+
+    private static void validateAnimatedSticker(@NonNull String identifier, @NonNull String fileName, int size,
+            @NonNull WebPInfo info) throws InvalidPackException {
+        final String where = ", sticker pack identifier:" + identifier + ", filename:" + fileName;
+        if (!info.animated) {
+            throw new InvalidPackException(InvalidPackException.STATIC_STICKER_IN_ANIMATED_PACK,
+                    "sticker is static but the pack is animated (a pack cannot mix static and animated stickers)"
+                            + where);
+        }
+        if (size > ANIMATED_STICKER_FILE_SIZE_LIMIT_BYTES) {
+            throw new InvalidPackException(InvalidPackException.IMAGE_TOO_BIG,
+                    "animated sticker should be less than 500KB, it is " + (size / 1024) + "KB" + where);
+        }
+        if (info.canvasWidth != IMAGE_WIDTH || info.canvasHeight != IMAGE_HEIGHT) {
+            throw new InvalidPackException(InvalidPackException.INCORRECT_IMAGE_SIZE,
+                    "animated sticker should be " + IMAGE_WIDTH + "x" + IMAGE_HEIGHT + ", it is " + info.canvasWidth
+                            + "x" + info.canvasHeight + where);
+        }
+        if (info.frameCount < 1 || info.minFrameDurationMs < ANIMATED_FRAME_DURATION_MIN_MS) {
+            throw new InvalidPackException(InvalidPackException.INVALID_ANIMATION,
+                    "every animation frame must last at least " + ANIMATED_FRAME_DURATION_MIN_MS + "ms, the shortest"
+                            + " frame here is " + info.minFrameDurationMs + "ms (" + info.frameCount + " frames)"
+                            + where);
+        }
+        if (info.totalDurationMs > ANIMATED_TOTAL_DURATION_MAX_MS) {
+            throw new InvalidPackException(InvalidPackException.INVALID_ANIMATION,
+                    "animation must last at most " + (ANIMATED_TOTAL_DURATION_MAX_MS / 1000) + "s, it lasts "
+                            + info.totalDurationMs + "ms" + where);
+        }
+    }
+
+    /**
+     * True if at least one sticker is an animated WebP. Used to infer the pack type when the caller
+     * did not state it.
+     */
+    static boolean anyStickerAnimated(@NonNull Context context, @NonNull String identifier,
+            @NonNull List<Sticker> stickers) throws InvalidPackException {
+        for (Sticker sticker : stickers) {
+            try {
+                if (WebPInfo.parse(StickerPackLoader.fetchStickerAsset(identifier, sticker.imageFileName, context)).animated) {
+                    return true;
+                }
+            } catch (IOException e) {
+                throw new InvalidPackException(InvalidPackException.FILE_NOT_FOUND,
+                        "cannot open sticker file: sticker pack identifier:" + identifier + ", filename:"
+                                + sticker.imageFileName.replace("_MZN_AD_", File.separator).replace("_MZN_FD_",
+                                        File.separator));
+            }
+        }
+        return false;
     }
 
     private static void checkStringValidity(@NonNull String string) throws InvalidPackException {

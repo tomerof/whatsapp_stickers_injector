@@ -50,6 +50,7 @@ public class WhatsappStickersPlugin: NSObject, FlutterPlugin {
         let publisherWebsite = arguments["publisherWebsite"] as? String
         let privacyPolicyWebsite = arguments["privacyPolicyWebsite"] as? String
         let licenseAgreementWebsite = arguments["licenseAgreementWebsite"] as? String
+        let animatedStickerPack = arguments["animatedStickerPack"] as? Bool
         
         var stickerPack: StickerPack?
         
@@ -60,7 +61,8 @@ public class WhatsappStickersPlugin: NSObject, FlutterPlugin {
                                           trayImageFileName: locateFile(atPath: trayImageFileName),
                                           publisherWebsite: publisherWebsite,
                                           privacyPolicyWebsite: privacyPolicyWebsite,
-                                          licenseAgreementWebsite: licenseAgreementWebsite)
+                                          licenseAgreementWebsite: licenseAgreementWebsite,
+                                          animatedStickerPack: animatedStickerPack)
             
         } catch StickerPackError.fileNotFound {
             result(FlutterError(code: "FILE_NOT_FOUND", message: "\(trayImageFileName) not found.", details: nil))
@@ -114,6 +116,9 @@ public class WhatsappStickersPlugin: NSObject, FlutterPlugin {
             } catch StickerPackError.animatedImagesNotSupported {
                 result(FlutterError(code: "ANIMATED_IMAGES_NOT_SUPPORTED", message: "\(filename) is an animated image. Animated images are not supported.", details: nil))
                 return
+            } catch StickerPackError.invalidAnimation {
+                result(FlutterError(code: "INVALID_ANIMATION", message: "\(filename): the animation must last at most \(Int(Limits.MaxAnimatedStickerDurationSeconds)) seconds (and every frame at least 8 ms).", details: nil))
+                return
             } catch StickerPackError.tooManyEmojis {
                 result(FlutterError(code: "TOO_MANY_EMOJIS", message: "\(filename) has too many emojis. \(Limits.MaxEmojisCount) is the maximum number.", details: nil))
                 return
@@ -123,6 +128,19 @@ public class WhatsappStickersPlugin: NSObject, FlutterPlugin {
             }
         }
             
+        do {
+            try stickerPack!.verifyAnimation()
+        } catch StickerPackError.staticStickerInAnimatedPack {
+            result(FlutterError(code: "STATIC_STICKER_IN_ANIMATED_PACK", message: "A pack cannot mix static and animated stickers: the pack is animated but contains a static sticker.", details: nil))
+            return
+        } catch StickerPackError.animatedImagesNotSupported {
+            result(FlutterError(code: "ANIMATED_IMAGES_NOT_SUPPORTED", message: "The pack is a static pack but contains an animated sticker (a pack cannot mix static and animated stickers).", details: nil))
+            return
+        } catch {
+            result(FlutterError(code: "GENERAL_ERROR", message: error.localizedDescription, details: nil))
+            return
+        }
+
         stickerPack!.sendToWhatsApp {
             completed in
             result(true)

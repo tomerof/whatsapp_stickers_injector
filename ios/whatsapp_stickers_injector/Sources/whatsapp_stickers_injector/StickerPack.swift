@@ -18,6 +18,8 @@ enum StickerPackError: Error {
     case imageTooBig(Int64)
     case incorrectImageSize(CGSize)
     case animatedImagesNotSupported
+    case staticStickerInAnimatedPack
+    case invalidAnimation
     case stickersNumOutsideAllowableRange
     case stringTooLong
     case tooManyEmojis
@@ -36,7 +38,15 @@ class StickerPack {
     let privacyPolicyWebsite: String?
     let licenseAgreementWebsite: String?
 
+    /// nil = auto-detect: the pack is animated when any of its stickers is.
+    private let requestedAnimatedStickerPack: Bool?
+
     var stickers: [Sticker]
+
+    /// Whether this pack is sent to WhatsApp as an animated sticker pack.
+    var animated: Bool {
+        return requestedAnimatedStickerPack ?? stickers.contains { $0.imageData.animated }
+    }
 
     var bytesSize: Int64 {
         var totalBytes: Int64 = Int64(name.utf8.count + publisher.utf8.count + trayImage.data.count)
@@ -56,6 +66,7 @@ class StickerPack {
      *  - Parameter publisherWebsite: website of publisher
      *  - Parameter privacyPolicyWebsite: website of privacy policy
      *  - Parameter licenseAgreementWebsite: website of license agreement
+     *  - Parameter animatedStickerPack: true for an animated pack, false for a static one, nil to detect from the stickers
      *
      *  - Throws:
      - .emptyString if the name and publisher are empty strings
@@ -66,7 +77,7 @@ class StickerPack {
      - .incorrectImageSize if the tray image is not within the allowed size
      - .animatedImagesNotSupported if the tray image is animated
      */
-    init(identifier: String, name: String, publisher: String, trayImageFileName: String, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?) throws {
+    init(identifier: String, name: String, publisher: String, trayImageFileName: String, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?, animatedStickerPack: Bool? = nil) throws {
         guard !name.isEmpty && !publisher.isEmpty && !identifier.isEmpty else {
             throw StickerPackError.emptyString
         }
@@ -87,6 +98,7 @@ class StickerPack {
         self.publisherWebsite = publisherWebsite
         self.privacyPolicyWebsite = privacyPolicyWebsite
         self.licenseAgreementWebsite = licenseAgreementWebsite
+        self.requestedAnimatedStickerPack = animatedStickerPack
     }
 
     /**
@@ -99,6 +111,7 @@ class StickerPack {
      *  - Parameter publisherWebsite: website of publisher
      *  - Parameter privacyPolicyWebsite: website of privacy policy
      *  - Parameter licenseAgreementWebsite: website of license agreement
+     *  - Parameter animatedStickerPack: true for an animated pack, false for a static one, nil to detect from the stickers
      *
      *  - Throws:
      - .emptyString if any string parameter is empty
@@ -107,7 +120,7 @@ class StickerPack {
      - .incorrectImageSize if the tray image is not within the allowed size
      - .animatedImagesNotSupported if the tray image is animated
      */
-    init(identifier: String, name: String, publisher: String, trayImagePNGData: Data, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?) throws {
+    init(identifier: String, name: String, publisher: String, trayImagePNGData: Data, publisherWebsite: String?, privacyPolicyWebsite: String?, licenseAgreementWebsite: String?, animatedStickerPack: Bool? = nil) throws {
         guard !name.isEmpty && !publisher.isEmpty && !identifier.isEmpty else {
             throw StickerPackError.emptyString
         }
@@ -128,6 +141,7 @@ class StickerPack {
         self.publisherWebsite = publisherWebsite
         self.privacyPolicyWebsite = privacyPolicyWebsite
         self.licenseAgreementWebsite = licenseAgreementWebsite
+        self.requestedAnimatedStickerPack = animatedStickerPack
     }
 
     /**
@@ -172,6 +186,20 @@ class StickerPack {
     }
 
     /**
+     *  Checks that the pack is entirely animated or entirely static. Call it once every sticker is added.
+     *
+     *  - Throws:
+     - .staticStickerInAnimatedPack if an animated pack contains a static sticker
+     - .animatedImagesNotSupported if a static pack contains an animated sticker
+     */
+    func verifyAnimation() throws {
+        let packIsAnimated = animated
+        for sticker in stickers where sticker.imageData.animated != packIsAnimated {
+            throw packIsAnimated ? StickerPackError.staticStickerInAnimatedPack : StickerPackError.animatedImagesNotSupported
+        }
+    }
+
+    /**
      *  Sends current sticker pack to WhatsApp.
      *
      *  - Parameter completionHandler: block that gets called when the sticker pack has been wrapped
@@ -184,6 +212,9 @@ class StickerPack {
             json["identifier"] = self.identifier
             json["name"] = self.name
             json["publisher"] = self.publisher
+            if self.animated {
+                json["animated_sticker_pack"] = true
+            }
             json["tray_image"] = self.trayImage.image!.pngData()?.base64EncodedString()
 
             var stickersArray: [[String: Any]] = []

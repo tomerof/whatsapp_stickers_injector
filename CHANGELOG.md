@@ -1,3 +1,23 @@
+## 1.2.0
+
+* Added animated sticker pack support. WhatsApp must be told a pack is animated, and previously
+  this plugin never did, so animated packs were rejected with "There's a problem with the sticker
+  pack" before the add screen could stay open.
+  * New optional `animatedStickerPack` argument on `WhatsappStickers`. Leave it `null` (default) to
+    auto-detect from the stickers, so existing callers need no change; set it to `true`/`false` to
+    be strict.
+  * Android: emits the `animated_sticker_pack` column from the content provider and stores it in
+    the pack config. Animated stickers are checked with a small built-in WebP header parser (no new
+    dependency): 512x512, at most 500 KB, every frame at least 8 ms, at most 10 s in total.
+    A pack must be all-animated or all-static.
+  * iOS: sends `animated_sticker_pack` in the pasteboard payload, allows animated stickers (the tray
+    stays static), applies the 500 KB limit and checks the total duration and pack consistency.
+    Not tested on a device yet; the per-frame 8 ms rule is not checked on iOS.
+  * New exceptions: `WhatsappStickersStaticStickerInAnimatedPackException` (`STATIC_STICKER_IN_ANIMATED_PACK`)
+    and `WhatsappStickersInvalidAnimationException` (`INVALID_ANIMATION`). A static pack containing an
+    animated sticker raises the existing `WhatsappStickersAnimatedImagesNotSupportedException`.
+* Added a Dart test for the method-channel payload and error mapping.
+
 ## 1.1.6
 
 * Documented the whole public API. All 53 public API elements now carry dartdoc comments (pub.dev

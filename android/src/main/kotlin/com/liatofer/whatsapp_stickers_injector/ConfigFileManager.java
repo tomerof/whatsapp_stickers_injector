@@ -47,7 +47,7 @@ public class ConfigFileManager {
         return stickerPackList;
     }
 
-    static StickerPack fromMethodCall(Context context, MethodCall call) {
+    static StickerPack fromMethodCall(Context context, MethodCall call) throws InvalidPackException {
         String identifier = call.argument("identifier");
         String name = call.argument("name");
         String publisher = call.argument("publisher");
@@ -57,8 +57,8 @@ public class ConfigFileManager {
         String privacyPolicyWebsite = call.argument("privacyPolicyWebsite");
         String licenseAgreementWebsite = call.argument("licenseAgreementWebsite");
         Map<String, List<String>> stickers = call.argument("stickers");
-        StickerPack newStickerPack = new StickerPack(identifier, name, publisher, trayImageFileName, "",
-                publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, "1", false);
+        // null = auto-detect: the pack is animated as soon as one of its stickers is.
+        Boolean animatedRequested = call.argument("animatedStickerPack");
         List<Sticker> newStickers = new ArrayList<Sticker>();
         assert stickers != null;
         for (Map.Entry<String, List<String>> entry : stickers.entrySet()) {
@@ -66,6 +66,11 @@ public class ConfigFileManager {
 
             newStickers.add(s);
         }
+        boolean animated = animatedRequested != null
+                ? animatedRequested
+                : StickerPackValidator.anyStickerAnimated(context, identifier, newStickers);
+        StickerPack newStickerPack = new StickerPack(identifier, name, publisher, trayImageFileName, "",
+                publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, "1", false, animated);
         newStickerPack.setStickers(newStickers);
         newStickerPack.setAndroidPlayStoreLink("");
         newStickerPack.setIosAppStoreLink("");
@@ -113,6 +118,7 @@ public class ConfigFileManager {
             obj.put("tray_image_file", getFileName(s.trayImageFile));
             obj.put("image_data_version", s.imageDataVersion);
             obj.put("avoid_cache", s.avoidCache);
+            obj.put("animated_sticker_pack", s.animatedStickerPack);
             obj.put("publisher_email", s.publisherEmail);
             obj.put("publisher_website", s.publisherWebsite);
             obj.put("privacy_policy_website", s.privacyPolicyWebsite);

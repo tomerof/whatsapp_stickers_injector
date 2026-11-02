@@ -105,8 +105,11 @@ class WhatsappStickersIncorrectImageSizeException
   String toString() => 'Incorrect image size';
 }
 
-/// Thrown when a sticker is an animated image and the platform requires a
-/// static one.
+/// Thrown when a sticker is an animated image but the pack is a static one.
+///
+/// Pass `animatedStickerPack: true` (or leave it unset to auto-detect) when all
+/// the stickers are animated. Also raised for an animated *tray* image, which
+/// must always be static.
 class WhatsappStickersAnimatedImagesNotSupportedException
     extends WhatsappStickersException {
   /// The platform error code that maps to this exception.
@@ -117,6 +120,37 @@ class WhatsappStickersAnimatedImagesNotSupportedException
 
   @override
   String toString() => 'Animated images not supported';
+}
+
+/// Thrown when an animated sticker pack contains a static sticker.
+///
+/// WhatsApp requires a pack to be entirely animated or entirely static, so
+/// this is also raised when the pack type is auto-detected and the pack mixes
+/// both kinds. Remove or replace the static sticker(s).
+class WhatsappStickersStaticStickerInAnimatedPackException
+    extends WhatsappStickersException {
+  /// The platform error code that maps to this exception.
+  static const String code = 'STATIC_STICKER_IN_ANIMATED_PACK';
+
+  /// Creates an exception carrying the platform's error message.
+  WhatsappStickersStaticStickerInAnimatedPackException(super.cause);
+
+  @override
+  String toString() => 'Static sticker in animated pack';
+}
+
+/// Thrown when an animated sticker breaks WhatsApp's animation limits: every
+/// frame must last at least 8 ms and the whole animation at most 10 seconds.
+class WhatsappStickersInvalidAnimationException
+    extends WhatsappStickersException {
+  /// The platform error code that maps to this exception.
+  static const String code = 'INVALID_ANIMATION';
+
+  /// Creates an exception carrying the platform's error message.
+  WhatsappStickersInvalidAnimationException(super.cause);
+
+  @override
+  String toString() => 'Invalid animation';
 }
 
 /// Thrown when a sticker is not associated with 1 to 3 emoji.

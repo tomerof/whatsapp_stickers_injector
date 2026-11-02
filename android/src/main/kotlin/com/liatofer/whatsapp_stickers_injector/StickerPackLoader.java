@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static com.liatofer.whatsapp_stickers_injector.StickerContentProvider.ANDROID_APP_DOWNLOAD_LINK_IN_QUERY;
+import static com.liatofer.whatsapp_stickers_injector.StickerContentProvider.ANIMATED_STICKER_PACK;
 import static com.liatofer.whatsapp_stickers_injector.StickerContentProvider.AVOID_CACHE;
 import static com.liatofer.whatsapp_stickers_injector.StickerContentProvider.IOS_APP_DOWNLOAD_LINK_IN_QUERY;
 import static com.liatofer.whatsapp_stickers_injector.StickerContentProvider.LICENSE_AGREENMENT_WEBSITE;
@@ -122,8 +123,12 @@ class StickerPackLoader {
                     .getString(cursor.getColumnIndexOrThrow(LICENSE_AGREENMENT_WEBSITE));
             final String imageDataVersion = cursor.getString(cursor.getColumnIndexOrThrow(IMAGE_DATA_VERSION));
             final boolean avoidCache = cursor.getShort(cursor.getColumnIndexOrThrow(AVOID_CACHE)) > 0;
+            // Tolerate a provider that predates the animated column.
+            final int animatedIndex = cursor.getColumnIndex(ANIMATED_STICKER_PACK);
+            final boolean animatedStickerPack = animatedIndex >= 0 && cursor.getShort(animatedIndex) > 0;
             final StickerPack stickerPack = new StickerPack(identifier, name, publisher, trayImage, publisherEmail,
-                    publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, imageDataVersion, avoidCache);
+                    publisherWebsite, privacyPolicyWebsite, licenseAgreementWebsite, imageDataVersion, avoidCache,
+                    animatedStickerPack);
             stickerPack.setAndroidPlayStoreLink(androidPlayStoreLink);
             stickerPack.setIosAppStoreLink(iosAppLink);
             stickerPackList.add(stickerPack);

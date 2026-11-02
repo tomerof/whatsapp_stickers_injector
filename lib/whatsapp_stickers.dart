@@ -71,6 +71,18 @@ class WhatsappStickers {
   /// An optional link to the pack's license agreement.
   String? licenseAgreementWebsite;
 
+  /// Whether this is an animated sticker pack.
+  ///
+  /// WhatsApp needs to be told, and a pack is either entirely animated or
+  /// entirely static, never a mix. Animated stickers are animated WebP files,
+  /// 512x512, at most 500 KB, every frame at least 8 ms and the whole loop at
+  /// most 10 seconds; the tray image stays a static PNG.
+  ///
+  /// Leave it `null` (the default) to let the plugin detect it from the
+  /// stickers: the pack is animated when its stickers are. Set it explicitly to
+  /// get an error instead of a silent guess when the stickers do not match.
+  final bool? animatedStickerPack;
+
   /// Creates a sticker pack description.
   ///
   /// This only describes the pack; nothing reaches WhatsApp until
@@ -84,6 +96,7 @@ class WhatsappStickers {
     this.publisherWebsite,
     this.privacyPolicyWebsite,
     this.licenseAgreementWebsite,
+    this.animatedStickerPack,
   });
 
   /// Adds one sticker to the pack.
@@ -120,6 +133,7 @@ class WhatsappStickers {
       payload['privacyPolicyWebsite'] = privacyPolicyWebsite;
       payload['licenseAgreementWebsite'] = licenseAgreementWebsite;
       payload['stickers'] = _stickers;
+      payload['animatedStickerPack'] = animatedStickerPack;
       await _channel.invokeMethod('sendToWhatsApp', payload);
     } on PlatformException catch (e) {
       switch (e.code.toUpperCase()) {
@@ -135,6 +149,10 @@ class WhatsappStickers {
           throw WhatsappStickersIncorrectImageSizeException(e.message);
         case WhatsappStickersAnimatedImagesNotSupportedException.code:
           throw WhatsappStickersAnimatedImagesNotSupportedException(e.message);
+        case WhatsappStickersStaticStickerInAnimatedPackException.code:
+          throw WhatsappStickersStaticStickerInAnimatedPackException(e.message);
+        case WhatsappStickersInvalidAnimationException.code:
+          throw WhatsappStickersInvalidAnimationException(e.message);
         case WhatsappStickersTooManyEmojisException.code:
           throw WhatsappStickersTooManyEmojisException(e.message);
         case WhatsappStickersEmptyStringException.code:
